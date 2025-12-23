@@ -61,12 +61,19 @@ def get_maptiler_tiles(lat, lng, zoom=20):
 def stitch_tiles(tiles):
     if not tiles:
         return None
-    tile_size = 256
+    
+    # Get the actual tile size from the first tile (handles both 256x256 and 512x512)
+    first_tile = tiles[0][2]
+    tile_size = first_tile.shape[0]
+    
+    # Create canvas based on actual tile size
     canvas = np.zeros((tile_size * 3, tile_size * 3, 3), dtype=np.uint8)
+    
     for dx, dy, tile_img in tiles:
         x_offset = (dx + 1) * tile_size
         y_offset = (dy + 1) * tile_size
         canvas[y_offset:y_offset+tile_size, x_offset:x_offset+tile_size] = tile_img
+    
     return canvas
 
 def calculate_perimeter(coordinates):
