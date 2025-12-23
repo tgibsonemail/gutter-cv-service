@@ -1,9 +1,3 @@
-```
-
-**In nano:**
-1. Press `Ctrl+K` multiple times to delete all old lines
-2. Paste this:
-```
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 opencv-python-headless==4.10.0.84
@@ -11,10 +5,4 @@ numpy==2.1.3
 Pillow==11.0.0
 requests==2.32.3
 python-dotenv==1.0.1
-setuptools==75.6.0fastapi==0.104.1
-uvicorn==0.24.0
-opencv-python-headless==4.10.0.84
-numpy==1.24.3
-Pillow==10.1.0
-requests==2.31.0
-python-dotenv==1.0.0
+setuptools==75.6.0
