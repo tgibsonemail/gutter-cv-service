@@ -135,7 +135,7 @@ async def analyze_property(request: PropertyRequest):
         image = stitch_tiles(tiles) if tiles else None
         eave_ratio = analyze_roof_edges(image, request.footprint_coordinates)
         stories = estimate_stories(request.footprint_coordinates, image)
-        gutter_lf = perimeter_ft * 1.08 * eave_ratio
+        gutter_lf = perimeter_ft * 1.15 * eave_ratio
         downspout_count = max(4, min(10, math.ceil(gutter_lf / 35)))
         if stories >= 2:
             downspout_count += 1
