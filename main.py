@@ -135,7 +135,7 @@ async def analyze_property(request: PropertyRequest):
         image = stitch_tiles(tiles) if tiles else None
         eave_ratio = analyze_roof_edges(image, request.footprint_coordinates)
         stories = estimate_stories(request.footprint_coordinates, image)
-        gutter_lf = perimeter_ft * 1.15 * eave_ratio
+        gutter_lf = perimeter_ft * 1.05 * eave_ratio  # 1.05: wall outlines (Overture) + ~5% eave overhang. Was 1.15 (quotes ran ~10% high vs measured, Nov 2026)
         downspout_count = max(4, min(10, math.ceil(gutter_lf / 35)))
         if stories >= 2:
             downspout_count += 1
