@@ -1,0 +1,86 @@
+[
+ {
+  "name": "silverbell",
+  "address": "8424 Silverbell Ln, Fort Worth, TX 76140",
+  "installer_gutter_ft": 204.0,
+  "engine_ft_2026_11_18": 193,
+  "note": ""
+ },
+ {
+  "name": "cedarcrest",
+  "address": "8409 Cedarcrest Ln, Fort Worth, TX 76123",
+  "installer_gutter_ft": 211.0,
+  "engine_ft_2026_11_18": 222,
+  "note": ""
+ },
+ {
+  "name": "carriage",
+  "address": "7612 Carriage Lane, Fort Worth, TX 76112",
+  "installer_gutter_ft": 280.0,
+  "engine_ft_2026_11_18": 295,
+  "note": "sketch segments add to about 272"
+ },
+ {
+  "name": "warm_mist",
+  "address": "6106 Warm Mist Lane, Dallas, TX 75248",
+  "installer_gutter_ft": 317.0,
+  "engine_ft_2026_11_18": 298,
+  "note": "one gable in back under tree cover (Trey)"
+ },
+ {
+  "name": "geneautry",
+  "address": "220 Gene Autry Lane, Murphy, TX 75094",
+  "installer_gutter_ft": 302.0,
+  "engine_ft_2026_11_18": 273,
+  "note": ""
+ },
+ {
+  "name": "liveoak",
+  "address": "221 Live Oak Dr, Hudson Oaks, TX 76087",
+  "installer_gutter_ft": 338.0,
+  "engine_ft_2026_11_18": 291,
+  "note": "Google imagery is MEDIUM quality here"
+ },
+ {
+  "name": "shadyoaks",
+  "address": "6365 Shady Oaks Dr, Frisco, TX 75034",
+  "installer_gutter_ft": 304.0,
+  "engine_ft_2026_11_18": 387,
+  "note": "6 inch gutter. Not partial. Gables across the front (Trey)"
+ },
+ {
+  "name": "haydenfaith",
+  "address": "408 Hayden Faith Ct, Springtown, TX 76082",
+  "installer_gutter_ft": 202.0,
+  "engine_ft_2026_11_18": null,
+  "note": "Google has no roof data: expect status no_roof_data"
+ },
+ {
+  "name": "dosier",
+  "address": "9301 Dosier Cove West, Fort Worth, TX 76179",
+  "installer_gutter_ft": 376.0,
+  "engine_ft_2026_11_18": 270,
+  "note": "5 inch; blind batch 1; total footage 575 includes 199 downspout"
+ },
+ {
+  "name": "catalina",
+  "address": "1604 Catalina Bay Ct, Granbury, TX 76048",
+  "installer_gutter_ft": 349.0,
+  "engine_ft_2026_11_18": 375,
+  "note": "6 inch; blind batch 1; total 510 includes 130 downspout, 14 valley guard, 17 corners"
+ },
+ {
+  "name": "jennifer",
+  "address": "604 Jennifer Trail, Grand Prairie, TX 75052",
+  "installer_gutter_ft": 260.0,
+  "engine_ft_2026_11_18": 225,
+  "note": "5 inch; blind batch 1; total 390 includes 130 downspout; sheet shows diverters"
+ },
+ {
+  "name": "marbella",
+  "address": "9505 Marbella Dr, Fort Worth, TX 76126",
+  "installer_gutter_ft": null,
+  "engine_ft_2026_11_18": 521,
+  "note": "CODE CHECK ONLY, not an accuracy test. No installer takeoff exists for this house (Trey, 2026-11-18). Kept because it is the only house that exercises the two story whole run rule. Do not score the engine against any on site figure for it."
+ }
+]

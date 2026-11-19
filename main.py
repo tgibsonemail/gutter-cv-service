@@ -8,9 +8,14 @@ from PIL import Image
 from io import BytesIO
 import math
 import os
+import sys
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Footage engine (Nov 2026): address -> gutter footage, range and flags. Lives in ./footage.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "footage"))
 
 app = FastAPI()
 
@@ -164,6 +169,40 @@ async def analyze_property(request: PropertyRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class FootageRequest(BaseModel):
+    address: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+
+
+def _scrub(text, key):
+    text = str(text)
+    return text.replace(key, "***") if key else text
+
+
+@app.post("/footage")
+def footage(request: FootageRequest):
+    # Never raises: any problem comes back as status "error" so the quote engine can fall back.
+    key = (os.getenv("GOOGLE_MAPS_API_KEY") or "").strip()
+    t0 = time.time()
+    if not key:
+        return {"status": "error", "message": "GOOGLE_MAPS_API_KEY not set on the measuring service", "footage_ft": None}
+    if not request.address and (request.lat is None or request.lng is None):
+        return {"status": "error", "message": "address or lat/lng required", "footage_ft": None}
+    try:
+        from estimate import estimate
+        result = estimate(address=request.address, lat=request.lat, lng=request.lng, key=key)
+    except BaseException as e:  # the engine uses sys.exit for some Google errors
+        return {"status": "error", "message": _scrub(e, key)[:300], "footage_ft": None,
+                "seconds": round(time.time() - t0, 1)}
+    if isinstance(result, dict) and result.get("message"):
+        result["message"] = _scrub(result["message"], key)
+    for f in (result.get("flags") or []):
+        if isinstance(f, dict) and f.get("message"):
+            f["message"] = _scrub(f["message"], key)
+    return result
+
 
 @app.get("/health")
 async def health_check():
