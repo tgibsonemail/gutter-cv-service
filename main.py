@@ -179,8 +179,10 @@ class FootageRequest(BaseModel):
 
 # One footage measurement at a time (Starter plan has 512 MB; one run peaks near 310 MB).
 # A second request waits its turn; if it waits too long it gets status "busy" so the quote engine falls back.
+# The quote engine gives up after 30 s, so waiting + measuring must stay under that.
 _FOOTAGE_LOCK = threading.Lock()
-_FOOTAGE_WAIT_S = 20
+_FOOTAGE_WAIT_S = 15
+_TOTAL_BUDGET_S = 27     # waiting + measuring; the engine itself caps a run at 25 s
 
 
 def _scrub(text, key):
@@ -202,7 +204,9 @@ def footage(request: FootageRequest):
                 "footage_ft": None, "seconds": round(time.time() - t0, 1)}
     try:
         from estimate import estimate
-        result = estimate(address=request.address, lat=request.lat, lng=request.lng, key=key)
+        waited = time.time() - t0
+        result = estimate(address=request.address, lat=request.lat, lng=request.lng, key=key,
+                          time_budget_s=max(8.0, min(25.0, _TOTAL_BUDGET_S - waited)))
     except BaseException as e:  # the engine uses sys.exit for some Google errors
         return {"status": "error", "message": _scrub(e, key)[:300], "footage_ft": None,
                 "seconds": round(time.time() - t0, 1)}

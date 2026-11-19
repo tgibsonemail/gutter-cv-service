@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from PIL import Image
 from pyproj import Transformer
+import netlimits as NL
 try:
     import DracoPy          # only needed if Google ever serves Draco compressed tiles; today it does not
 except Exception:
@@ -16,8 +17,7 @@ BASE = "https://tile.googleapis.com"
 RADIUS_M = 32.0
 
 def fetch(url):
-    with urllib.request.urlopen(url, timeout=90) as r:
-        return r.read()
+    return NL.read(url)       # 0.1.2: time limit + one retry on 5xx/timeout (netlimits.py)
 
 
 def obb_hits_sphere(box, c, r):

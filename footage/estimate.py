@@ -28,8 +28,9 @@ import eave_test as E
 import eave_planes as P
 import mesh_edges as M
 import tiles3d
+import netlimits as NL
 
-ENGINE_VERSION = "0.1.1 (2026-11-18)"   # 0.1.1: speed only (footprint nudge), numbers identical to 0.1
+ENGINE_VERSION = "0.1.2 (2026-11-18)"   # 0.1.2: time limits, retries, google_unavailable/timeout statuses. 0.1.1: speed only. Numbers identical to 0.1
 RANGE_PCT = 10.0             # Trey's decision 2026-11-18: quote shows plus or minus 10% of the number
 # ---- flag thresholds: set by judgment from eleven houses, NOT statistically proven ----
 PLANE_SHARE_LOW = 0.60       # share of the roof that resolves into clean planes in the Solar height data. Good houses 0.74 to 0.84, the one bad house 0.48
@@ -38,6 +39,7 @@ TREE_SHARE_HIGH = 0.25       # trees against more than this share of the outline
 UPPER_LEFT_OFF_NOTE_FT = 30  # tell the user when this much upper roof was left off
 CORNERS_TESTED_MAX = 21      # most corners on any house where the 3 ft jog rule tested well
 SECOND_STRUCT_MIN_SQFT = 100
+TIME_BUDGET_S = 25.0         # 0.1.2: the whole estimate must finish in this many seconds or return status "timeout"
 
 
 def _key(env_path=None):
@@ -56,14 +58,42 @@ def _fail(status, message, **extra):
     return d
 
 
-def estimate(address=None, lat=None, lng=None, key=None, env_path=None, png_path=None, range_pct=RANGE_PCT):
+def estimate(address=None, lat=None, lng=None, key=None, env_path=None, png_path=None, range_pct=RANGE_PCT,
+             time_budget_s=TIME_BUDGET_S):
+    """Never raises. Any failure comes back as a status other than "ok" with no footage number.
+    google_unavailable = Google errored or timed out twice (try again later, NOT "no data here").
+    timeout = the whole estimate ran past time_budget_s."""
     key = key or _key(env_path)
+    T0 = time.time()
+    NL.start(time_budget_s)
+    try:
+        out = _estimate(address, lat, lng, key, png_path, range_pct)
+        if out.get("status") == "ok" and time_budget_s and time.time() - T0 > time_budget_s:
+            out = _fail("timeout", "The estimate took %.0f s, over the %.0f s limit" % (time.time() - T0, time_budget_s),
+                        address=out.get("address") or address)
+        return out
+    except NL.GoogleUnavailable as e:
+        st = "timeout" if (e.timed_out or NL.past_deadline()) else "google_unavailable"
+        return _fail(st, "%s (after %.0f s)" % (e, time.time() - T0), address=address)
+    except SystemExit as e:
+        return _fail("error", "Google data could not be read (%s)" % str(e)[:160], address=address)
+    except Exception as e:
+        return _fail("error", "%s: %s" % (type(e).__name__, str(e)[:160]), address=address)
+    finally:
+        NL.stop()
+
+
+def _estimate(address, lat, lng, key, png_path, range_pct):
     T0 = time.time(); tm = {}
     formatted, loc_type = None, None
     # 1. address -> point
     if address:
         t = time.time()
         gj = E.get_json("https://maps.googleapis.com/maps/api/geocode/json?" + urllib.parse.urlencode({"address": address, "key": key}))
+        if gj.get("status") in ("UNKNOWN_ERROR", "OVER_QUERY_LIMIT"):     # 0.1.2: Google side trouble, not a bad address
+            raise NL.GoogleUnavailable("Google geocoding answered %s" % gj.get("status"))
+        if gj.get("status") == "REQUEST_DENIED":
+            return _fail("error", "Google refused the geocoding request (key or API settings)", address=address)
         if gj.get("status") != "OK":
             return _fail("address_not_found", "Google could not find this address (%s)" % gj.get("status"), address=address)
         g0 = gj["results"][0]
@@ -74,6 +104,8 @@ def estimate(address=None, lat=None, lng=None, key=None, env_path=None, png_path
     t = time.time()
     try:
         bi = P.building_insights(lat, lng, key)
+    except NL.GoogleUnavailable:
+        raise                                # 0.1.2: a Google outage is google_unavailable, never no_roof_data
     except SystemExit as e:
         return _fail("no_roof_data", "Google has no roof data for this address (%s)" % str(e)[:120], address=formatted or address, lat=lat, lng=lng)
     tm["building"] = round(time.time() - t, 1)
@@ -108,11 +140,17 @@ def estimate(address=None, lat=None, lng=None, key=None, env_path=None, png_path
         f1, f2 = ex.submit(solar_job), ex.submit(mesh_job)
         try:
             D, fp, q, tm["solar_and_outline"] = f1.result()
+        except NL.GoogleUnavailable:
+            raise                            # 0.1.2: outage or time limit, reported by estimate()
         except SystemExit as e:
             return _fail("no_roof_data", "Google roof data could not be read (%s)" % str(e)[:120], address=formatted or address, lat=lat, lng=lng)
+        except Exception as e:              # 0.1.2: anything else (was uncaught)
+            return _fail("error", "Google roof data could not be read (%s: %s)" % (type(e).__name__, str(e)[:120]), address=formatted or address, lat=lat, lng=lng)
         try:
             T, COL, nreq, tm["model_3d"] = f2.result()
-        except Exception as e:
+        except NL.GoogleUnavailable:
+            raise
+        except BaseException as e:
             return _fail("no_3d_model", "Google 3D model could not be read (%s)" % str(e)[:120], address=formatted or address, lat=lat, lng=lng)
     if fp is None:
         return _fail("no_map_shape", "Google's map view shows no building shape at this address", address=formatted or address, lat=lat, lng=lng)

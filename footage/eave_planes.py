@@ -23,6 +23,7 @@ from scipy import ndimage as ndi
 from skimage import morphology, measure, draw
 from PIL import Image, ImageDraw
 from pyproj import Transformer
+import netlimits as NL
 import eave_test as E
 
 M2FT = 3.28084
@@ -205,7 +206,7 @@ def fema_footprint(lat, lng, D):
     q = {"geometry": "%f,%f" % (lng, lat), "geometryType": "esriGeometryPoint", "inSR": "4326",
          "spatialRel": "esriSpatialRelIntersects", "distance": "15", "units": "esriSRUnit_Meter",
          "outFields": "*", "outSR": "4326", "f": "geojson", "resultRecordCount": "8"}
-    d = json.load(urllib.request.urlopen(url + "?" + urllib.parse.urlencode(q), timeout=60))
+    d = json.loads(NL.read(url + "?" + urllib.parse.urlencode(q)))
     tr = Transformer.from_crs(4326, D["epsg"], always_xy=True)
     px, blob = D["px"], D["blob"]
     H, W = blob.shape
@@ -266,7 +267,7 @@ def gmap_footprint(lat, lng, D, key):
          ("maptype", "roadmap"),
          ("style", "feature:all|element:labels|visibility:off"),
          ("key", key)]
-    data = urllib.request.urlopen("https://maps.googleapis.com/maps/api/staticmap?" + urllib.parse.urlencode(q), timeout=60).read()
+    data = NL.read("https://maps.googleapis.com/maps/api/staticmap?" + urllib.parse.urlencode(q))   # 0.1.2: time limit + retry
     im = np.array(Image.open(io.BytesIO(data)).convert("RGB")).astype(int)
     # buildings are drawn in one flat grey (233, 234, 239) on a lighter background
     red = (np.abs(im[..., 0] - 233) <= 4) & (np.abs(im[..., 1] - 234) <= 4) & (np.abs(im[..., 2] - 239) <= 4)

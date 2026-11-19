@@ -13,6 +13,7 @@ The API key is read from the env file (GOOGLE_MAPS_API_KEY=...), never stored in
 import argparse, json, math, os, sys, io, urllib.request, urllib.parse
 import numpy as np
 import logging
+import netlimits as NL
 logging.getLogger('tifffile').setLevel(logging.ERROR)
 import tifffile
 from scipy import ndimage as ndi
@@ -46,8 +47,7 @@ def read_key(env_path):
 
 def get_json(url):
     try:
-        with urllib.request.urlopen(url, timeout=60) as r:
-            return json.load(r)
+        return json.loads(NL.read(url))      # 0.1.2: time limit + one retry on 5xx/timeout (netlimits.py)
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf8", "ignore")
         try:
@@ -58,8 +58,7 @@ def get_json(url):
 
 
 def get_tif(url, key):
-    with urllib.request.urlopen(url + "&key=" + key, timeout=120) as r:
-        data = r.read()
+    data = NL.read(url + "&key=" + key)      # 0.1.2: time limit + one retry on 5xx/timeout
     tf = tifffile.TiffFile(io.BytesIO(data))
     page = tf.pages[0]
     arr = page.asarray()
