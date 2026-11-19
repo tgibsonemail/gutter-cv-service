@@ -241,9 +241,14 @@ def nudge(rc, blob):
     """Slide a footprint up to 4 m so it best covers Google's visible roof."""
     H, W = blob.shape
     top = (-1, 0, 0)
+    # Speed (2026-11-18): draw the footprint once on a canvas padded by the largest shift, then slide a
+    # window over it. A whole pixel shift of the polygon is the same mask shifted, so the result is identical
+    # to drawing it 441 times, about 100 times faster.
+    PAD = 40
+    big = draw.polygon2mask((H + 2 * PAD, W + 2 * PAD), rc + [PAD, PAD])
     for dr in range(-40, 41, 4):
         for dc in range(-40, 41, 4):
-            m = draw.polygon2mask((H, W), rc + [dr, dc])
+            m = big[PAD - dr:PAD - dr + H, PAD - dc:PAD - dc + W]
             score = (m & blob).sum() - 0.5 * (m & ~blob).sum()
             if score > top[0]:
                 top = (score, dr, dc)

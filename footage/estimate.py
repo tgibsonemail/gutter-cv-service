@@ -29,7 +29,7 @@ import eave_planes as P
 import mesh_edges as M
 import tiles3d
 
-ENGINE_VERSION = "0.1 (2026-11-18)"
+ENGINE_VERSION = "0.1.1 (2026-11-18)"   # 0.1.1: speed only (footprint nudge), numbers identical to 0.1
 RANGE_PCT = 10.0             # Trey's decision 2026-11-18: quote shows plus or minus 10% of the number
 # ---- flag thresholds: set by judgment from eleven houses, NOT statistically proven ----
 PLANE_SHARE_LOW = 0.60       # share of the roof that resolves into clean planes in the Solar height data. Good houses 0.74 to 0.84, the one bad house 0.48
