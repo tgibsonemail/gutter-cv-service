@@ -10,6 +10,7 @@ import math
 import os
 import sys
 import time
+import threading
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -176,6 +177,12 @@ class FootageRequest(BaseModel):
     lng: float | None = None
 
 
+# One footage measurement at a time (Starter plan has 512 MB; one run peaks near 310 MB).
+# A second request waits its turn; if it waits too long it gets status "busy" so the quote engine falls back.
+_FOOTAGE_LOCK = threading.Lock()
+_FOOTAGE_WAIT_S = 20
+
+
 def _scrub(text, key):
     text = str(text)
     return text.replace(key, "***") if key else text
@@ -190,12 +197,18 @@ def footage(request: FootageRequest):
         return {"status": "error", "message": "GOOGLE_MAPS_API_KEY not set on the measuring service", "footage_ft": None}
     if not request.address and (request.lat is None or request.lng is None):
         return {"status": "error", "message": "address or lat/lng required", "footage_ft": None}
+    if not _FOOTAGE_LOCK.acquire(timeout=_FOOTAGE_WAIT_S):
+        return {"status": "busy", "message": "another measurement was running; waited %ds" % _FOOTAGE_WAIT_S,
+                "footage_ft": None, "seconds": round(time.time() - t0, 1)}
     try:
         from estimate import estimate
         result = estimate(address=request.address, lat=request.lat, lng=request.lng, key=key)
     except BaseException as e:  # the engine uses sys.exit for some Google errors
         return {"status": "error", "message": _scrub(e, key)[:300], "footage_ft": None,
                 "seconds": round(time.time() - t0, 1)}
+    finally:
+        _FOOTAGE_LOCK.release()
+    result["queue_wait_s"] = round(time.time() - t0 - (result.get("timings_s") or {}).get("total", 0), 1) if isinstance(result.get("timings_s"), dict) else None
     if isinstance(result, dict) and result.get("message"):
         result["message"] = _scrub(result["message"], key)
     for f in (result.get("flags") or []):
